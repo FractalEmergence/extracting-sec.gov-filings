@@ -27,7 +27,7 @@ from datetime import datetime
 company_CIKs = ['1018724', '1318605'] # You can find company's CIK number at https://www.sec.gov/edgar/searchedgar/companysearch.html
 filing_types = ['10-k','10-q'] # Enter what forms(s) you want to extract using the '10-K', '10-Q', '8-K' format.
 db_name = 'edgar.db' # Enter the database name that you want to use and populate. The database will be automatically created if it does not exist.
-folder_path = r"C:\sqlite\db\microsoft_amazon" # Specify the folder path for DB file. For example "C:\sqlite\db"
+folder_path = r"C:\sqlite\db" # Specify the folder path for DB file. For example "C:\sqlite\db"
 db_path = f"{folder_path}\{db_name}"
 start_date = '2021-02-30' # Enter the date range for the filings in the 'YYYY-MM-DD' format
 end_date = '2022-10-26'
