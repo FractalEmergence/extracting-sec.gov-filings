@@ -24,13 +24,13 @@ from dateutil import parser # pip install python-dateutil
 from datetime import datetime
 
 
-company_CIKs = ['1730168'] # You can find company's CIK number at https://www.sec.gov/edgar/searchedgar/companysearch.html
+company_CIKs = ['1018724', '1318605'] # You can find company's CIK number at https://www.sec.gov/edgar/searchedgar/companysearch.html
 filing_types = ['10-k','10-q'] # Enter what forms(s) you want to extract using the '10-K', '10-Q', '8-K' format.
 db_name = 'edgar.db' # Enter the database name that you want to use and populate. The database will be automatically created if it does not exist.
-folder_path = r"C:\sqlite\db" # Specify the folder path for DB file. For example "C:\sqlite\db"
+folder_path = r"C:\sqlite\db\microsoft_amazon" # Specify the folder path for DB file. For example "C:\sqlite\db"
 db_path = f"{folder_path}\{db_name}"
-start_date = '2021-01-26' # Enter the date range for the filings in the 'YYYY-MM-DD' format
-end_date = '2021-10-26'
+start_date = '2021-02-30' # Enter the date range for the filings in the 'YYYY-MM-DD' format
+end_date = '2022-10-26'
 
 # Create a class to handle connection(s) to SQLite database(s).
 class DB_Connection:
@@ -105,7 +105,6 @@ class Get_Filing_Links:
                     main_table = soup.find_all('table', class_='tableFile2')
                     # The base URL will be used to construct document links URLs.
                     sec_base_url = r"https://www.sec.gov"
-                    #################################
                     Company_Name_path=str(soup.find('span',{'class':'companyName'}))
                     if Company_Name_path != None:
                         try:
@@ -123,15 +122,14 @@ class Get_Filing_Links:
                             Filing_Type = cols[0].text.strip()
                             Filing_Date = cols[3].text.strip()
                             Filing_Number = cols[4].text.strip()
-                            Filing_Number = Filing_Number.replace(' ','')\
+                            Filing_Number = ''.join(e for e in Filing_Number if e.isalnum())
 
                             # Get the account number.
                             try:
                                 Account_Number= cols[2].text.strip()
                                 Account_Number = re.search('Acc-no:(.*)(34 Act)', Account_Number).group(1)
-                                Account_Number = Account_Number.replace(' ','')\
-                                                               .replace('(','')\
-                                                               .replace('-','')[:-1]
+                                Account_Number = ''.join(e for e in Account_Number if e.isalnum())
+
                             except Exception as e:
                                 """
                                 Add break if you don't want empty account number rows. If account number is not present,
@@ -373,7 +371,7 @@ class Extract_Data:
                             AND a.filing_date BETWEEN ? AND ?
                             ORDER by filing_date DESC
                             LIMIT ?
-                            """, con = conn , params=(company_CIK, filing_type, filings1.start_date, filings1.end_date , 10)) 
+                            """, con = conn , params=(company_CIK, filing_type, filings1.start_date, filings1.end_date , 10))
                         dfs.append(df)
                     except ValueError as e:
                         print(f"Error occurred while attempting to retreive data from the SQL database.\nAbording the program.\n{e}")
