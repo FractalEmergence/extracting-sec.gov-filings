@@ -1,11 +1,12 @@
 
 """
-This program allows the user to bulk extract table data that is present in 10-k, 10-q and 8-k forms, this data is
-publicly available at https://www.sec.gov/. The exctracted data is stored in a local SQLite database, I recommend using
-DB Browser for SQLite to interact with the data, you can download DB Browser at https://sqlitebrowser.org/. The program
-creates two databases, the tables in the first database 'edgar.db' are easily readable by a human and resemble a
-spreadsheet style, the second database 'edgar_transposed.db' is a a SQL normalized database with the tables transposed
-to make data mining and visualizations such as Time Series visualization easier.
+This program allows the user to bulk extract table data that is present in 10-k, 10-q and 8-k forms, such as financial
+statements including income statements, balance sheets and cash flow statements. This data is publicly available at
+https://www.sec.gov/. The extracted data is stored in a local SQLite database, I recommend using DB Browser for
+SQLite to interact with the data, you can download DB Browser at https://sqlitebrowser.org/. This program creates
+two databases, the tables in the first database 'edgar.db' are easily readable by a human and resemble a spreadsheet
+style, the second database 'edgar_transposed.db' is a SQL normalized database with the tables transposed to make data
+mining and visualizations such as Time Series visualization easier.
 """
 
 
@@ -135,7 +136,7 @@ class Get_Filing_Links:
                                 Add break if you don't want empty account number rows. If account number is not present,
                                 the interactive document link will not be available (from my limited observations).
                                 If the interactive link is not present, we will not be able to extract the individual
-                                tables containing financial statements such as balance sheets, etc.
+                                tables containing financial statements..
                                 """
                                 Account_Number = None
                                 print(f'Could not retrieve the account number, assigning NULL value.\n{e}')
@@ -448,7 +449,9 @@ class Extract_Data:
                             # Transform first rows into the header.
                             df_table.columns = df_table.iloc[0]
                             df_table = df_table[1:]
-                            df_table.columns = df_table.columns.str.replace(' ','_')
+                            # Remoce special characters, replace empty spaces with _
+                            df_table = df_table.rename(columns=lambda x: re.sub('\W+','_',x))
+                            df_table.columns = df_table.columns.str.strip('_')
                             df_table.columns = df_table.columns.str.lower()
                             # Convert index of the DataFrame into a column.
                             df_table.reset_index(level=0, inplace=True)
@@ -509,18 +512,18 @@ data1.transpose()
 """
 You can create a reference table with the following query.
 
-CREATE TABLE IF NOT EXISTS reference_table AS 
-SELECT a.filing_number, a.filing_date, a.company_name, a.cik, a.filing_type, a.table_name, b.short_name, b.report_url
+CREATE TABLE IF NOT EXISTS reference_table AS
+SELECT a.company_name, b.short_name, a.filing_type, a.filing_date, a.filing_number, a.cik, a.table_name, b.report_url
 FROM (
       SELECT a.filing_number, a.filing_date, a.company_name, a.cik, a.filing_type, b.table_name
       FROM filing_list AS a
       INNER JOIN (SELECT name AS table_name
-                  FROM sqlite_master 
+                  FROM sqlite_master
                   WHERE type='table') AS b
       ON b.table_name LIKE '%' || a.filing_number || '%') AS a
 LEFT OUTER JOIN individual_report_links AS b
 ON (a.table_name LIKE '%' || REPLACE(b.short_name, ' ' , '_') || '_'||  b.filing_number|| '%')
-AND a.filing_number = b.filing_number 
+AND a.filing_number = b.filing_number
 GROUP BY a.table_name
 ORDER BY 6
 """
