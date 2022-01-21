@@ -24,13 +24,13 @@ from dateutil import parser # pip install python-dateutil
 from datetime import datetime
 
 
-company_CIKs = ['1018724', '1318605'] # You can find company's CIK number at https://www.sec.gov/edgar/searchedgar/companysearch.html
+company_CIKs = ['1018724', '1318605', '789019'] # You can find company's CIK number at https://www.sec.gov/edgar/searchedgar/companysearch.html
 filing_types = ['10-k','10-q'] # Enter what forms(s) you want to extract using the '10-K', '10-Q', '8-K' format.
 db_name = 'edgar.db' # Enter the database name that you want to use and populate. The database will be automatically created if it does not exist.
 folder_path = r"C:\sqlite\db" # Specify the folder path for DB file. For example "C:\sqlite\db"
 db_path = f"{folder_path}\{db_name}"
-start_date = '2021-02-30' # Enter the date range for the filings in the 'YYYY-MM-DD' format
-end_date = '2022-10-26'
+start_date = '2021-01-01' # Enter the date range for the filings in the 'YYYY-MM-DD' format
+end_date = '2022-12-30'
 
 # Create a class to handle connection(s) to SQLite database(s).
 class DB_Connection:
@@ -167,7 +167,8 @@ class Get_Filing_Links:
 
                             self.info_to_sql(Company_Name, Company_CIK_Number, Account_Number, Filing_Type, Filing_Number, Filing_Date, Document_Link, Interactive_Data_Link, Filing_Number_Link, Summary_Link_Xml)
         except Exception as e:
-            print(f"Could not retrieve the table containing the necessary information.\nAbording the program.\n{e}")
+            print(f"Could not retrieve the table containing the necessary information.\nAbording the program.\
+                  \nIf index list is out of range, make sure that you entered the correct CIK number(s).\n{e}")
             sys.exit(1)
 
     # Migrate the DataFrame containing, filing, company and document link information to a local SQLite database.
@@ -282,6 +283,9 @@ class Get_Filing_Links:
                 for item in soup_2.find_all('report')[:-1]:
                     if item.shortname:
                         Short_Name = item.shortname.text
+                         # Remove all special characters except for '_'
+                        Short_Name = re.sub(r"[^a-zA-Z0-9]+", ' ', Short_Name)
+                        Short_Name = Short_Name.rstrip() # Remove white wite space at the end of the string.
                     else:
                         print('Short name could not be retrieved.')
                         Short_Name  = None
@@ -397,7 +401,6 @@ class Extract_Data:
                         try:
                             # We want to name the table with a unique table name for easy reference.
                             table_name = filing_type + filing_date + '_' + short_name.replace(' ','_') + '_' + str(filing_number)
-                            #table_name = ''.join(e for e in table_name if e.isalnum()) # Remove all special characters
                             table_name = re.sub(r"[^a-zA-Z0-9]+", '_', table_name) # Remove all special characters except for '_'
                             print(f'Inserting data from the DataFrame into SQL table {table_name}')
                             # Write records that are stored in the DataFrame into a SQL server database.
@@ -502,3 +505,22 @@ filings1.get_table_links()
 data1 = Extract_Data()
 data1.get_tables()
 data1.transpose()
+
+"""
+You can create a reference table with the following query.
+
+CREATE TABLE IF NOT EXISTS reference_table AS 
+SELECT a.filing_number, a.filing_date, a.company_name, a.cik, a.filing_type, a.table_name, b.short_name, b.report_url
+FROM (
+      SELECT a.filing_number, a.filing_date, a.company_name, a.cik, a.filing_type, b.table_name
+      FROM filing_list AS a
+      INNER JOIN (SELECT name AS table_name
+                  FROM sqlite_master 
+                  WHERE type='table') AS b
+      ON b.table_name LIKE '%' || a.filing_number || '%') AS a
+LEFT OUTER JOIN individual_report_links AS b
+ON (a.table_name LIKE '%' || REPLACE(b.short_name, ' ' , '_') || '_'||  b.filing_number|| '%')
+AND a.filing_number = b.filing_number 
+GROUP BY a.table_name
+ORDER BY 6
+"""
