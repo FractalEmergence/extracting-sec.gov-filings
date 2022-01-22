@@ -419,6 +419,7 @@ class Extract_Data:
 
         DB_Connection.close_conn()
 
+
     # Normalize the data.
     def transpose(self):
 
@@ -455,14 +456,12 @@ class Extract_Data:
                             df_table.columns = df_table.columns.str.lower()
                             # Convert index of the DataFrame into a column.
                             df_table.reset_index(level=0, inplace=True)
-                            # Convert rows to numeric data types such as integers and floats.
-                            df_table = df_table.apply(pd.to_numeric, errors = 'ignore')
                             # Format the date column.
                             try:
                                 date_list = []
                                 for item in df_table.iloc[:,0]:
                                     match = re.search('\D{3}. \d{2}, \d{4}', item)
-                                    date= parser.parse(match.group()).strftime("%Y-%m-%d")
+                                    date= parser.parse(match.group()).strftime("%Y-%m-%d") # Removes the time stamp.
                                     date_list.append(date)
                                 df_table.rename(columns={ df_table.columns[0]: "date" }, inplace = True)
                                 df_table['date'] = date_list
@@ -470,6 +469,9 @@ class Extract_Data:
                             except Exception as e:
                                 df_table.rename(columns={ df_table.columns[0]: "name" }, inplace = True)
                                 print(e)
+                            # Convert rows to numeric data types such as integers and floats.
+                            df_table.replace(',','', regex=True, inplace=True)
+                            df_table = df_table.apply(pd.to_numeric, errors = 'ignore')
                             # Dynamically rename duplicate rows that have the same name.
                             if any(df_table.columns.duplicated()):
                                 print('Duplicate column name detected.\nRenaming the duplicate column name.  ')
@@ -478,7 +480,6 @@ class Extract_Data:
                                     columns_series[columns_series[columns_series == dup].index.values.tolist()] = \
                                     [dup + '.' + str(i) if i != 0 else dup for i in range(sum(columns_series == dup))]
                                 df_table.columns = columns_series
-
                             break
                     except Exception as e:
                         print(f"Could not transpose the table.\n{e}")
@@ -526,5 +527,4 @@ ON (a.table_name LIKE '%' || REPLACE(b.short_name, ' ' , '_') || '_'||  b.filing
 AND a.filing_number = b.filing_number
 GROUP BY a.table_name
 ORDER BY 6
-"""Y 6
 """
