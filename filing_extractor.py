@@ -510,9 +510,9 @@ data1.get_tables()
 data1.transpose()
 
 """
-You can create a reference table with the following query.
+You can create a view to reference this table with the following query.
 
-CREATE TABLE IF NOT EXISTS reference_table AS
+CREATE VIEW reference_table AS
 SELECT a.company_name, b.short_name, a.filing_type, a.filing_date, a.filing_number, a.cik, a.table_name, b.report_url
 FROM (
       SELECT a.filing_number, a.filing_date, a.company_name, a.cik, a.filing_type, b.table_name
@@ -526,4 +526,5 @@ ON (a.table_name LIKE '%' || REPLACE(b.short_name, ' ' , '_') || '_'||  b.filing
 AND a.filing_number = b.filing_number
 GROUP BY a.table_name
 ORDER BY 6
+"""Y 6
 """
