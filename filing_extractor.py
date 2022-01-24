@@ -30,7 +30,7 @@ filing_types = ['10-k','10-q'] # Enter what forms(s) you want to extract using t
 db_name = 'edgar.db' # Enter the database name that you want to use and populate. The database will be automatically created if it does not exist.
 folder_path = r"C:\sqlite\db" # Specify the folder path for DB file. For example "C:\sqlite\db"
 db_path = f"{folder_path}\{db_name}"
-start_date = '2021-01-01' # Enter the date range for the filings in the 'YYYY-MM-DD' format
+start_date = '2015-01-01' # Enter the date range for the filings in the 'YYYY-MM-DD' format
 end_date = '2022-12-30'
 
 # Create a class to handle connection(s) to SQLite database(s).
@@ -125,6 +125,21 @@ class Get_Filing_Links:
                             Filing_Number = cols[4].text.strip()
                             Filing_Number = ''.join(e for e in Filing_Number if e.isalnum())
 
+
+                            # Get the URL path to the filing number.
+                            filing_number_path = cols[4].find('a')
+                            if filing_number_path != None:
+                                Filing_Number_Link = sec_base_url + filing_number_path['href']
+                            else:
+                               break
+
+                            # Get the URL path to the document.
+                            document_link_path = cols[1].find('a', {'href':True, 'id':'documentsbutton'})
+                            if document_link_path != None:
+                                Document_Link = sec_base_url + document_link_path['href']
+                            else:
+                                Document_Link = None
+
                             # Get the account number.
                             try:
                                 Account_Number= cols[2].text.strip()
@@ -134,37 +149,25 @@ class Get_Filing_Links:
                             except Exception as e:
                                 """
                                 Add break if you don't want empty account number rows. If account number is not present,
-                                the interactive document link will not be available (from my limited observations).
-                                If the interactive link is not present, we will not be able to extract the individual
-                                tables containing financial statements..
+                                the interactive document link will not be available. If the interactive link is not present,
+                                we will not be able to extract the individual tables containing financial statements..
                                 """
                                 Account_Number = None
                                 print(f'Could not retrieve the account number, assigning NULL value.\n{e}')
 
-                            # Get the URL path to the document.
-                            document_link_path = cols[1].find('a', {'href':True, 'id':'documentsbutton'})
-                            if document_link_path != None:
-                                Document_Link = sec_base_url + document_link_path['href']
-                            else:
-                                Document_Link = None
                             # Get the URL path to the interactive document.
                             interactive_data_path = cols[1].find('a', {'href':True, 'id':'interactiveDataBtn'})
                             if interactive_data_path != None:
                                 Interactive_Data_Link = sec_base_url + interactive_data_path['href']
                                 # If the interactive data link exists, then so does the FilingSummary.xml link.
                                 Summary_Link_Xml = Document_Link.replace(f"/{Account_Number}",'')\
-                                                                  .replace('-','')\
-                                                                  .replace('index.htm' ,'/FilingSummary.xml')
+                                                                .replace('-','')\
+                                                                .replace('index.htm' ,'/FilingSummary.xml')
+
                             else:
                                 # break
                                 Interactive_Data_Link = None
                                 Summary_Link_Xml = None
-
-                            filing_number_path = cols[4].find('a')
-                            if filing_number_path != None:
-                                Filing_Number_Link = sec_base_url + filing_number_path['href']
-                            else:
-                               Filing_Number_Link = None
 
                             self.info_to_sql(Company_Name, Company_CIK_Number, Account_Number, Filing_Type, Filing_Number, Filing_Date, Document_Link, Interactive_Data_Link, Filing_Number_Link, Summary_Link_Xml)
         except Exception as e:
