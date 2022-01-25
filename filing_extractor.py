@@ -30,7 +30,7 @@ filing_types = ['10-k','10-q'] # Enter what forms(s) you want to extract using t
 db_name = 'edgar.db' # Enter the database name that you want to use and populate. The database will be automatically created if it does not exist.
 folder_path = r"C:\sqlite\db" # Specify the folder path for DB file. For example "C:\sqlite\db"
 db_path = f"{folder_path}\{db_name}"
-start_date = '2015-01-01' # Enter the date range for the filings in the 'YYYY-MM-DD' format
+start_date = '2020-01-01' # Enter the date range for the filings in the 'YYYY-MM-DD' format
 end_date = '2022-12-30'
 
 # Create a class to handle connection(s) to SQLite database(s).
@@ -40,7 +40,6 @@ class DB_Connection:
     def __init__(self, db_name, folder_path, db_path):
         self.db_name = db_name
         self.folder_path = folder_path
-        #self.db_path = db_path
 
     # Create a directory for the DB file if the directory does not exist.
     def create_folder(self):
@@ -453,8 +452,8 @@ class Extract_Data:
                             # Transform first rows into the header.
                             df_table.columns = df_table.iloc[0]
                             df_table = df_table[1:]
-                            # Remoce special characters, replace empty spaces with _
-                            df_table = df_table.rename(columns=lambda x: re.sub('\W+','_',x))
+                            # Remove special characters, replace empty spaces with _
+                            df_table = df_table.rename(columns=lambda x: re.sub('\W+','_',str(x)))
                             df_table.columns = df_table.columns.str.strip('_')
                             df_table.columns = df_table.columns.str.lower()
                             # Convert index of the DataFrame into a column.
@@ -464,14 +463,18 @@ class Extract_Data:
                                 date_list = []
                                 for item in df_table.iloc[:,0]:
                                     match = re.search('\D{3}. \d{2}, \d{4}', item)
-                                    date= parser.parse(match.group()).strftime("%Y-%m-%d") # Removes the time stamp.
-                                    date_list.append(date)
+                                    if match is not None:
+                                        date= parser.parse(match.group()).strftime("%Y-%m-%d") # .strftime removes the time stamp.
+                                        date_list.append(date)
+                                    else:
+                                        date_list.append(item)
                                 df_table.rename(columns={ df_table.columns[0]: "date" }, inplace = True)
                                 df_table['date'] = date_list
                                 print('Successfully formatted the date.')
                             except Exception as e:
                                 df_table.rename(columns={ df_table.columns[0]: "name" }, inplace = True)
                                 print(e)
+
                             # Convert rows to numeric data types such as integers and floats.
                             df_table.replace(',','', regex=True, inplace=True)
                             df_table = df_table.apply(pd.to_numeric, errors = 'ignore')
