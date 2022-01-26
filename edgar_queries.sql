@@ -28,7 +28,7 @@ AND a.filing_number = b.filing_number
 GROUP BY a.table_name
 ORDER BY 6
 
--- This is an example of combining Microsoft's income statement for the past 9 years and converting data types (if necessary). 
+-- This is an example of combining Microsoft's income statements for the past 9 years and converting data types (if necessary). 
 
 SELECT 
 date AS 'Date',
