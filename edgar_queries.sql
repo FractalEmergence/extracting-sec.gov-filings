@@ -74,11 +74,100 @@ research_and_development, sales_and_marketing
 FROM '10_K2020_07_30_INCOME_STATEMENTS_137845201063171'
 WHERE revenue IS NOT NULL
 UNION
-SELECT date, revenue , net_income, income_before_income_taxes, operating_income, gross_margin, 
+SELECT date, revenue , net_income, income_before_income_taxes, operating_income, gross_margin, change in working capital',
 research_and_development, sales_and_marketing
 FROM '10_K2021_07_29_INCOME_STATEMENTS_137845211127769'
 WHERE revenue IS NOT NULL
 )
 GROUP BY DATE
 
---
+-- Example of calculating microsoft's EBITDA, EBITDA Margin, working capital, change in cash working capital.
+
+SELECT c.date, 
+       c.operating_income, 
+       c.revenue AS 'revenue',
+       d.property_and_equipment_net_of_accumulated_depreciation,
+       c.depreciation_amortization_and_other,
+       ROUND(CAST(c.provision_for_income_taxes AS float)/CAST(income_before_income_taxes AS float) * 100 ,2) AS 'annual_effective_tax_rate',
+       c.operating_income + c.depreciation_amortization_and_other AS 'EBITDA',
+       ROUND((CAST(c.operating_income AS float) + CAST(c.depreciation_amortization_and_other AS float))/CAST(c.revenue AS float),2) * 100 AS 'EBITDA_Margin ',
+       c.additions_to_property_and_equipment*(-1) AS 'capital_expenditure',
+       d.total_current_assets - d.total_current_liabilities AS 'working_capital',
+       (d.total_current_assets - d.total_current_liabilities) - (d.total_current_assets_previous_year - d.total_current_liabilities_previous_year) AS 'change_in_working_capital',
+       (d.total_current_assets-d.total_cash_cash_equivalents_and_short_term_investments) - (d.total_current_liabilities-current_portion_of_long_term_debt) AS 'non_cash_working_capital',
+       ((d.total_current_assets-d.total_cash_cash_equivalents_and_short_term_investments) - (d.total_current_liabilities-current_portion_of_long_term_debt))-
+       ((d.total_current_assets_previous_year -d.total_cash_cash_equivalents_and_short_term_investments_previous_year) - 
+       (d.total_current_liabilities_previous_year - d.current_portion_of_long_term_debt_previous_year)) AS 'change_in_non_cash_working_capital'
+FROM
+(
+       SELECT *,
+              LEAD(depreciation_amortization_and_other) OVER(ORDER BY date DESC) AS 'depreciation_amortization_and_other_previous_year'
+       FROM 
+       (
+           SELECT a.date, 
+                  a.revenue,
+                  a.operating_income, 
+                  b.depreciation_amortization_and_other,
+                  a.net_income, 
+                  a.income_before_income_taxes,
+                  a.provision_for_income_taxes,
+                  b.additions_to_property_and_equipment
+           FROM '10_K2021_07_29_INCOME_STATEMENTS_137845211127769' AS a
+           INNER JOIN '10_K2021_07_29_CASH_FLOWS_STATEMENTS_137845211127769' AS b
+           ON a.date = b.date
+           WHERE (a.revenue || b.depreciation_amortization_and_other || a.operating_income) IS NOT NULL 
+           UNION
+           SELECT a.date, 
+                  a.revenue,
+                  a.operating_income, 
+                  b.depreciation_amortization_and_other,
+                  a.net_income,
+                  a.income_before_income_taxes,
+                  a.provision_for_income_taxes,
+                  b.additions_to_property_and_equipment
+           FROM '10_K2020_07_30_INCOME_STATEMENTS_137845201063171' AS a
+           INNER JOIN '10_K2020_07_30_CASH_FLOWS_STATEMENTS_137845201063171' AS b
+           ON a.date = b.date
+           WHERE (a.revenue || b.depreciation_amortization_and_other || a.operating_income) IS NOT NULL
+       ) GROUP BY date ) AS c
+           LEFT JOIN (SELECT date,     
+                             property_and_equipment_net_of_accumulated_depreciation,
+                             LEAD(property_and_equipment_net_of_accumulated_depreciation) OVER(ORDER BY date DESC) AS 'property_and_equipment_net_of_accumulated_depreciation_previous_year',
+                             total_current_assets, 
+                             LEAD(total_current_assets) OVER(ORDER BY date DESC) AS 'total_current_assets_previous_year',
+                             total_current_liabilities,
+                             LEAD(total_current_liabilities) OVER(ORDER BY date DESC) AS 'total_current_liabilities_previous_year',
+                             current_portion_of_long_term_debt, 
+                             LEAD(current_portion_of_long_term_debt) OVER(ORDER BY date DESC) AS 'current_portion_of_long_term_debt_previous_year',
+                             total_cash_cash_equivalents_and_short_term_investments,
+                             LEAD(total_cash_cash_equivalents_and_short_term_investments) OVER(ORDER BY date DESC) AS 'total_cash_cash_equivalents_and_short_term_investments_previous_year'                
+                      FROM (SELECT date, 
+                                   property_and_equipment_net_of_accumulated_depreciation_of_51_351_and_43_197 AS 'property_and_equipment_net_of_accumulated_depreciation', 
+                                   total_current_assets, total_current_liabilities, 
+                                   total_cash_cash_equivalents_and_short_term_investments, 
+                                   current_portion_of_long_term_debt
+                            FROM '10_K2021_07_29_BALANCE_SHEETS_137845211127769' 
+                            UNION
+                            SELECT date, 
+                                   property_and_equipment_net_of_accumulated_depreciation_of_43_197_and_35_330 AS 'property_and_equipment_net_of_accumulated_depreciation', 
+                                   total_current_assets, total_current_liabilities, 
+                                   total_cash_cash_equivalents_and_short_term_investments, 
+                                   current_portion_of_long_term_debt
+                            FROM '10_K2020_07_30_BALANCE_SHEETS_137845201063171'
+                            UNION 
+                            SELECT date, 
+                                   property_and_equipment_net_of_accumulated_depreciation_of_35_330_and_29_223 AS 'property_and_equipment_net_of_accumulated_depreciation', 
+                                   total_current_assets, total_current_liabilities, 
+                                   total_cash_cash_equivalents_and_short_term_investments, 
+                                   current_portion_of_long_term_debt
+                            FROM '10_K2019_08_01_BALANCE_SHEETS_13784519992755' 
+                            UNION 
+                            SELECT date, 
+                                   property_and_equipment_net_of_accumulated_depreciation_of_29_223_and_24_179 AS 'property_and_equipment_net_of_accumulated_depreciation',
+                                   total_current_assets, 
+                                   total_current_liabilities, 
+                                   total_cash_cash_equivalents_and_short_term_investments, 
+                                   current_portion_of_long_term_debt
+                            FROM '10_K2018_08_03_BALANCE_SHEETS_13784518990758' )) AS d
+           ON c.date = d.date
+       ORDER BY d.date DESC
