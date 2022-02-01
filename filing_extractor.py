@@ -286,7 +286,7 @@ class Get_Filing_Links:
                 for item in soup_2.find_all('report')[:-1]:
                     if item.shortname:
                         Short_Name = item.shortname.text
-                         # Remove all special characters except for '_'
+                         # Remove special characters
                         Short_Name = re.sub(r"[^a-zA-Z0-9]+", ' ', Short_Name)
                         Short_Name = Short_Name.rstrip() # Remove white wite space at the end of the string.
                     else:
