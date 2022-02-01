@@ -1,15 +1,3 @@
-
-"""
-This program allows the user to bulk extract table data that is present in 10-k, 10-q and 8-k forms, such as financial
-statements including income statements, balance sheets and cash flow statements. This data is publicly available at
-https://www.sec.gov/. The extracted data is stored in a local SQLite database, I recommend using DB Browser for
-SQLite to interact with the data, you can download DB Browser at https://sqlitebrowser.org/. This program creates
-two databases, the tables in the first database 'edgar.db' are easily readable by a human and resemble a spreadsheet
-style, the second database 'edgar_transposed.db' is a SQL normalized database with the tables transposed to make data
-mining and visualizations such as Time Series visualization easier.
-"""
-
-
 import requests
 import requests_random_user_agent # pip install requests-random-user-agent
 import pandas as pd
