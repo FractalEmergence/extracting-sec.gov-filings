@@ -20,3 +20,7 @@ Before running filing_extractor.py,  modify the list parameters. You can extract
     $ source venv/bin/activate
     $ venv\Scripts\activate.bat
     $ pip install -r requirements.txt
+    
+### Running the Python file
+
+    $ python filing_extractor.py
