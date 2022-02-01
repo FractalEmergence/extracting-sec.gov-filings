@@ -515,22 +515,3 @@ filings1.get_table_links()
 data1 = Extract_Data()
 data1.get_tables()
 data1.transpose()
-
-"""
-You can create a view to reference this table with the following query.
-
-CREATE VIEW reference_table AS
-SELECT a.company_name, b.short_name, a.filing_type, a.filing_date, a.filing_number, a.cik, a.table_name, b.report_url
-FROM (
-      SELECT a.filing_number, a.filing_date, a.company_name, a.cik, a.filing_type, b.table_name
-      FROM filing_list AS a
-      INNER JOIN (SELECT name AS table_name
-                  FROM sqlite_master
-                  WHERE type='table') AS b
-      ON b.table_name LIKE '%' || a.filing_number || '%') AS a
-LEFT OUTER JOIN individual_report_links AS b
-ON (a.table_name LIKE '%' || REPLACE(b.short_name, ' ' , '_') || '_'||  b.filing_number|| '%')
-AND a.filing_number = b.filing_number
-GROUP BY a.table_name
-ORDER BY 6
-"""
