@@ -38,9 +38,9 @@ Download the non-processed edgar.db database at : https://drive.google.com/file/
     
 ### Example queries
   ```SQL
-  ----------------------------------------------------------------------
-  -- Compare two databases and find missing tables if there are any. --
-  ----------------------------------------------------------------------
+  ---------------------------------------------------------------------
+  -- Compare two databases and find missing tables if there are any --
+  ---------------------------------------------------------------------
   
 ATTACH 'edgar.db' AS db1;
 ATTACH 'edgar_transposed.db' AS db2;
@@ -51,9 +51,9 @@ EXCEPT
 SELECT name FROM db2.sqlite_schema
 WHERE type = 'table'
 
----------------------------------------------------------------------------------
--- Inspect tables properties, such as columns and their respective data types. --
----------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-- Inspect tables properties, such as columns and their respective data types --
+--------------------------------------------------------------------------------
 
 pragma table_info('table_name');
 
@@ -79,9 +79,9 @@ AND a.filing_number = b.filing_number
 GROUP BY a.table_name
 ORDER BY 6
 
----------------------------------------------------------------------------------------------------------------------------------
--- This is an example of combining Microsoft's income statements for the past 9 years and converting data types (if necessary).--
----------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------
+-- This is an example of combining Microsoft's income statements for the past 9 years and converting data types (if necessary)--
+--------------------------------------------------------------------------------------------------------------------------------
 
 SELECT date AS 'Date',
        CAST(REPLACE(revenue, ',', '') AS integer) AS 'Revenue',
@@ -124,9 +124,9 @@ FROM
 WHERE (revenue || net_income || income_before_income_taxes || operating_income || gross_margin || research_and_development || sales_and_marketing ) IS NOT NULL
 GROUP BY DATE
 
-----------------------------------------------------------------------------------------------------------------
--- Example of calculating microsoft's EBITDA, EBITDA Margin, working capital, change in cash working capital. --
-----------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------
+-- Example of calculating microsoft's EBITDA, EBITDA Margin, working capital, change in cash working capital --
+---------------------------------------------------------------------------------------------------------------
 
 SELECT c.date, 
        c.operating_income, 
