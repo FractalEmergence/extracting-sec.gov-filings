@@ -38,7 +38,10 @@ Download the non-processed edgar.db database at : https://drive.google.com/file/
     
 ### Example queries
   ```SQL
-  -- Compare two databases and find missing tables if there are any.
+  ----------------------------------------------------------------------
+  -- Compare two databases and find missing tables if there are any. --
+  ----------------------------------------------------------------------
+  
 ATTACH 'edgar.db' AS db1;
 ATTACH 'edgar_transposed.db' AS db2;
 
