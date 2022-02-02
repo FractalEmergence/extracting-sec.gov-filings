@@ -16,17 +16,21 @@ Before running filing_extractor.py,  modify the list parameters. You can extract
 
 In this example we use 'C:\sqlite\db' as the directory for creation of the virtual environment. 
 
-    $ pip install virtualenv
-    $ cd C:\sqlite\db
-    $ virtualenv venv
-    $ source venv/bin/activate
-    $ venv\Scripts\activate.bat
-    $ pip install -r requirements.txt
+```cmd
+ pip install virtualenv
+ cd C:\sqlite\db
+ virtualenv venv
+ source venv/bin/activate
+ venv\Scripts\activate.bat
+ pip install -r requirements.txt
+```
+
+    
     
 ### Running the Python file
-
-    $ python filing_extractor.py
-    
+```cmd
+python filing_extractor.py
+  ```  
 ### Downlaod example database
 
 Download links to a sample database that was generated using filing_extractor.py. 
