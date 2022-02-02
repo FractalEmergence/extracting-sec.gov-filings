@@ -14,6 +14,8 @@ Before running filing_extractor.py,  modify the list parameters. You can extract
 
 ### Setup in Windows 
 
+In this example we use 'C:\sqlite\db' as the directory for creation of the virtual environment. 
+
     $ pip install virtualenv
     $ cd C:\sqlite\db
     $ virtualenv venv
