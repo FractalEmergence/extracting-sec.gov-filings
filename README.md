@@ -1,6 +1,6 @@
 ## Extract tables from SEC.gov filings
 
-filing_extractor.py allows the user to extract tables in bulk from Sec.Gov filings and store the extracted tables in a SQLite database for quick and easy access, furthermore it creates a separate SQL normalized database which can be used to create time-series graphs and allows for further processing in SQL. 
+filing_extractor.py allows the user to extract tables in bulk from SEC.gov filings and store the extracted tables in a SQLite database for quick and easy access, furthermore it creates a separate SQL normalized database which can be used to create time-series graphs and allows for further processing in SQL. 
 
 Before running filing_extractor.py,  modify the list parameters. You can extract multiple filing types for multiple companies at the same time. 
 
