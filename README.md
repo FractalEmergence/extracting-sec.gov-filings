@@ -1,10 +1,10 @@
 ## Extract tables from SEC.gov filings
 
-filing_extractor.py allows the user to extract tables in bulk from SEC.gov filings and store the extracted tables in a SQLite database for quick and easy access, furthermore it creates a separate SQL normalized database which can be used to create time-series graphs and allows for further processing in SQL. 
+sec_scraper.py allows the user to extract tables in bulk from SEC.gov filings and store the extracted tables in a SQLite database for quick and easy access, furthermore it creates a separate SQL normalized database which can be used to create time-series graphs and allows for further processing in SQL. 
 
-Before running filing_extractor.py,  modify the list parameters. You can extract multiple filing types for multiple companies at the same time. 
+Before running sec_scraper.py,  modify the list parameters. You can extract multiple filing types for multiple companies at the same time. 
 
-- You must first find the company's CIK number which you can find at https://www.sec.gov/edgar/searchedgar/companysearch.html. Once you find the company’s CIK number, modify the filing_extractor.py file and place the CIK number in the company_CIKs list, for example company_CIKs = [‘789019’, '1018724'],  here the CIK numbers belong to Microsoft and Amazon respectively. 
+- You must first find the company's CIK number which you can find at https://www.sec.gov/edgar/searchedgar/companysearch.html. Once you find the company’s CIK number, modify the sec_scraper.py file and place the CIK number in the company_CIKs list, for example company_CIKs = [‘789019’, '1018724'],  here the CIK numbers belong to Microsoft and Amazon respectively. 
 
 - Secondly, enter the type of filings that you want to use, if you want to use annual reports  put  ‘10-K’ in filing_types, similarly if you want tables from the quarterly report use ‘10-Q’, for example filing_types = ['10-k','10-q'].
 
@@ -29,11 +29,11 @@ In this example we use 'C:\sqlite\db' as the directory for creation of the virtu
     
 ### Running the Python file
 ```cmd
-python filing_extractor.py
+python sec_scraper.py
   ```  
 ### Downlaod example database
 
-Download links to a sample database that was generated using filing_extractor.py. 
+Download links to a sample database that was generated using sec_scraper.py. 
 Companies included in the database: Microsoft, Tesla and Amazon
 Filing types: 10-K and 10-Q
 Time range: 2015-01-26 to 2021-10-29
