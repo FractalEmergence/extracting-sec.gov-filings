@@ -31,7 +31,7 @@ In this example we use 'C:\sqlite\db' as the directory for creation of the virtu
 ```cmd
 python sec_scraper.py
   ```  
-### Downlaod example database
+### Downlaod sample database
 
 Download links to a sample database that was generated using sec_scraper.py. 
 Companies included in the database: Microsoft, Tesla and Amazon
