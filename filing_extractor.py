@@ -12,14 +12,19 @@ import time
 from dateutil import parser # pip install python-dateutil
 from datetime import datetime
 
-
-company_CIKs = ['1018724', '1318605', '789019'] # You can find company's CIK number at https://www.sec.gov/edgar/searchedgar/companysearch.html
-filing_types = ['10-k','10-q'] # Enter what forms(s) you want to extract using the '10-K', '10-Q', '8-K' format.
-db_name = 'edgar.db' # Enter the database name that you want to use and populate. The database will be automatically created if it does not exist.
-folder_path = r"C:\sqlite\db" # Specify the folder path for DB file. For example "C:\sqlite\db"
+# You can find company's CIK number at https://www.sec.gov/edgar/searchedgar/companysearch.html
+company_CIKs = ['1018724', '1318605', '789019']
+# Enter what forms(s) you want to extract using the '10-K', '10-Q', '8-K' format.
+filing_types = ['10-k']
+# Enter the database name that you want to use and populate.
+#The database will be automatically created if it does not exist.
+db_name = 'edgar.db'
+# Specify the folder path for DB file. For example "C:\sqlite\db"
+folder_path = r"C:\sqlite\db"
 db_path = f"{folder_path}\{db_name}"
-start_date = '2020-01-01' # Enter the date range for the filings in the 'YYYY-MM-DD' format
-end_date = '2022-12-30'
+# Enter the date range for the filings in the 'YYYY-MM-DD' format
+start_date = '2020-01-01'
+end_date = '2022-01-01'
 
 # Create a class to handle connection(s) to SQLite database(s).
 class DB_Connection:
@@ -46,9 +51,11 @@ class DB_Connection:
             print(f'Successfully connected to the {db_path} database.')
             return cls.conn
         except sqlite3.Error as e:
-            print(f'Error occurred, unable to connect to the {db_path} database.\n{e}\nAbording program.')
-            sys.exit(1) # sys.exit(0) means the program is exiting without any errors, sys.exit(1) means there was an error.
-
+            print(f'Error occurred, unable to connect to the {db_path} database.\
+                    \n{e}\nAbording program.')
+            # sys.exit(0) means the program is exiting without any errors
+            # sys.exit(1) means there was an error.
+            sys.exit(1)
     # Close connection to the database.
     @classmethod
     def close_conn(cls):
@@ -86,21 +93,25 @@ class Get_Filing_Links:
                                   'count':'100'}
 
                     # request the url, and then parse the response.
-                    response = requests.get(url = r"https://www.sec.gov/cgi-bin/browse-edgar", params = filing_parameters)
-                    time.sleep(0.1) # Create a 0.1 second time delay to comply with SEC.gov's 10 requests per second limit.
+                    response = requests.get(url = r"https://www.sec.gov/cgi-bin/browse-edgar",
+                                            params = filing_parameters)
+                    # Add 0.1 second time delay to comply with SEC.gov's 10 requests per second limit.
+                    time.sleep(0.1)
                     soup = BeautifulSoup(response.content, 'html.parser')
-                    # Find the document table that contains information such as document links, filing number and account number.
+                    # Find the document table that contains filing information.
                     main_table = soup.find_all('table', class_='tableFile2')
                     # The base URL will be used to construct document links URLs.
                     sec_base_url = r"https://www.sec.gov"
                     Company_Name_path=str(soup.find('span',{'class':'companyName'}))
                     if Company_Name_path != None:
                         try:
-                            Company_Name = re.search('<span class="companyName">(.*)<acronym title', Company_Name_path).group(1)
+                            Company_Name = re.search('<span class="companyName">(.*)<acronym title',
+                                                     Company_Name_path).group(1)
                         except AttributeError:
-                            print("Could not find company name, assigning NULL value to company name.")
+                            print("Could not find company name, \
+                                   assigning NULL value to company name.")
                             Company_Name = None
-                    # loop through each row in the table and extract filing numbers, account numbers, etc.
+                    # loop through each row of table and extract filing numbers, links, etc.
                     for row in main_table[0].find_all('tr'):
                         # find all the rows under the 'td' element.
                         cols = row.find_all('td')
@@ -121,7 +132,8 @@ class Get_Filing_Links:
                                break
 
                             # Get the URL path to the document.
-                            document_link_path = cols[1].find('a', {'href':True, 'id':'documentsbutton'})
+                            document_link_path = cols[1].find('a',
+                                                              {'href':True, 'id':'documentsbutton'})
                             if document_link_path != None:
                                 Document_Link = sec_base_url + document_link_path['href']
                             else:
@@ -130,20 +142,25 @@ class Get_Filing_Links:
                             # Get the account number.
                             try:
                                 Account_Number= cols[2].text.strip()
-                                Account_Number = re.search('Acc-no:(.*)(34 Act)', Account_Number).group(1)
+                                Account_Number = re.search('Acc-no:(.*)(34 Act)',
+                                                            Account_Number).group(1)
                                 Account_Number = ''.join(e for e in Account_Number if e.isalnum())
 
                             except Exception as e:
                                 """
-                                Add break if you don't want empty account number rows. If account number is not present,
-                                the interactive document link will not be available. If the interactive link is not present,
-                                we will not be able to extract the individual tables containing financial statements..
+                                Add break if you don't want empty account number rows.
+                                If account number is not present, the interactive document
+                                link will not be available. If the interactive link is not
+                                present, we will not be able to extract the individual
+                                tables containing financial statements..
                                 """
                                 Account_Number = None
-                                print(f'Could not retrieve the account number, assigning NULL value.\n{e}')
+                                print(f'Could not retrieve the account number, \
+                                        assigning NULL value.\n{e}')
 
                             # Get the URL path to the interactive document.
-                            interactive_data_path = cols[1].find('a', {'href':True, 'id':'interactiveDataBtn'})
+                            interactive_data_path = cols[1].find('a',
+                                                                 {'href':True, 'id':'interactiveDataBtn'})
                             if interactive_data_path != None:
                                 Interactive_Data_Link = sec_base_url + interactive_data_path['href']
                                 # If the interactive data link exists, then so does the FilingSummary.xml link.
@@ -156,14 +173,19 @@ class Get_Filing_Links:
                                 Interactive_Data_Link = None
                                 Summary_Link_Xml = None
 
-                            self.info_to_sql(Company_Name, Company_CIK_Number, Account_Number, Filing_Type, Filing_Number, Filing_Date, Document_Link, Interactive_Data_Link, Filing_Number_Link, Summary_Link_Xml)
+                            self.info_to_sql(Company_Name, Company_CIK_Number, Account_Number,
+                                             Filing_Type, Filing_Number, Filing_Date, Document_Link,
+                                             Interactive_Data_Link, Filing_Number_Link, Summary_Link_Xml)
         except Exception as e:
-            print(f"Could not retrieve the table containing the necessary information.\nAbording the program.\
-                  \nIf index list is out of range, make sure that you entered the correct CIK number(s).\n{e}")
+            print(f"Could not retrieve the table containing the necessary information.\
+                    \nAbording the program.\nIf index list is out of range, make sure \
+                    that you entered the correct CIK number(s).\n{e}")
             sys.exit(1)
 
-    # Migrate the DataFrame containing, filing, company and document link information to a local SQLite database.
-    def info_to_sql(self, Company_Name, Company_CIK_Number, Account_Number, Filing_Type, Filing_Number, Filing_Date, Document_Link, Interactive_Data_Link, Filing_Number_Link, Summary_Link_Xml):
+    # Migrate the DataFrame containing, filing and document links information to a local SQLite database.
+    def info_to_sql(self, Company_Name, Company_CIK_Number, Account_Number,
+                    Filing_Type, Filing_Number, Filing_Date, Document_Link,
+                    Interactive_Data_Link, Filing_Number_Link, Summary_Link_Xml):
 
         with DB_Connection.open_conn(db_path) as conn:
             try:
@@ -184,7 +206,8 @@ class Get_Filing_Links:
                     )
                     ;""")
             except ValueError as e:
-                print(f"Error occurred while attempting to create filing_list table.\nAbording the program.\n{e}")
+                print(f"Error occurred while attempting to create filing_list table.\
+                        \nAbording the program.\n{e}")
                 sys.exit(1)
             else:
                 print("Successfully created the table.")
@@ -238,7 +261,10 @@ class Get_Filing_Links:
                              AND filing_type = ?
                              AND cik = ?
                              AND filing_date BETWEEN ? AND ?
-                             """, con = conn , params=(Filing_Type, Company_CIK_Number, self.start_date, self.end_date))
+                             """, con = conn , params=(Filing_Type,
+                                                       Company_CIK_Number,
+                                                       self.start_date,
+                                                       self.end_date))
                         dfs.append(df)
                 df_query2 = pd.concat(dfs)
 
@@ -262,7 +288,8 @@ class Get_Filing_Links:
                     )
                     ;""")
             except ValueError as e:
-                print(f"Error occurred while attempting to create individual_report_links table.\nAbording the program.\n{e}")
+                print(f"Error occurred while attempting to create individual_report_links table.\
+                        \nAbording the program.\n{e}")
                 sys.exit(1)
 
             # Extract the tables name and its respective URL
@@ -276,15 +303,18 @@ class Get_Filing_Links:
                         Short_Name = item.shortname.text
                          # Remove special characters
                         Short_Name = re.sub(r"[^a-zA-Z0-9]+", ' ', Short_Name)
-                        Short_Name = Short_Name.rstrip() # Remove white wite space at the end of the string.
+                        # Remove white wite space at the end of the string.
+                        Short_Name = Short_Name.rstrip()
                     else:
                         print('Short name could not be retrieved.')
                         Short_Name  = None
                     # Some tables come only in the xml form.
                     if item.htmlfilename:
-                        Report_Url = summary_link_xml.replace('FilingSummary.xml', item.htmlfilename.text)
+                        Report_Url = summary_link_xml.replace('FilingSummary.xml',
+                                                              item.htmlfilename.text)
                     elif item.xmlfilename:
-                        Report_Url = summary_link_xml.replace('FilingSummary.xml', item.xmlfilename.text)
+                        Report_Url = summary_link_xml.replace('FilingSummary.xml',
+                                                              item.xmlfilename.text)
                     else:
                         print('URL to the individual report could not be retrieved.')
                         Report_Url = None
@@ -315,7 +345,8 @@ class Get_Filing_Links:
                             Report_Url
                              ))
                     except ValueError as e:
-                        print(f"Error occurred while attempting to insert values into the individual_report_links table.\nAbording the program.\n{e}")
+                        print(f"Error occurred while attempting to insert values into \
+                                the individual_report_links table.\nAbording the program.\n{e}")
                         sys.exit(1)
 
         DB_Connection.close_conn()
@@ -327,7 +358,8 @@ class Extract_Data:
         self.df_xml = None
     # Extract table data from a .XMK
     def htm_table_extractor(self,report_url):
-        response_xml = requests.get(report_url).content # Note to self, .text is in Unicode, .content is in bytes.
+        # Note to self, .text is in Unicode, .content is in bytes.
+        response_xml = requests.get(report_url).content
         time.sleep(0.1)
         soup_xml = BeautifulSoup(response_xml, "lxml")
         table = soup_xml.find_all('table')
@@ -342,7 +374,8 @@ class Extract_Data:
                                          .replace({' ','', 1}, regex = True)
 
             except Exception as e:
-                print(f'Error occurred while attempting to insert table data into the DataFrame.\n{e}')
+                print(f'Error occurred while attempting to insert \
+                        table data into the DataFrame.\n{e}')
         else:
             print(f'No table detected for {report_url}.')
 
@@ -356,7 +389,12 @@ class Extract_Data:
                     try:
                         df = pd.read_sql_query(
                             """
-                            SELECT a.filing_number, a.company_name, a.filing_type, a.filing_date, b.short_name , b.report_url
+                            SELECT a.filing_number,
+                                   a.company_name,
+                                   a.filing_type,
+                                   a.filing_date,
+                                   b.short_name ,
+                                   b.report_url
                             FROM filing_list a
                             INNER JOIN individual_report_links b
                             ON a.filing_number = b.filing_number
@@ -366,10 +404,13 @@ class Extract_Data:
                             AND a.filing_date BETWEEN ? AND ?
                             ORDER by filing_date DESC
                             LIMIT ?
-                            """, con = conn , params=(company_CIK, filing_type, filings1.start_date, filings1.end_date , 10))
+                            """, con = conn , params=(company_CIK, filing_type,
+                                                      filings1.start_date,
+                                                      filings1.end_date , 10))
                         dfs.append(df)
                     except ValueError as e:
-                        print(f"Error occurred while attempting to retreive data from the SQL database.\nAbording the program.\n{e}")
+                        print(f"Error occurred while attempting to retreive data \
+                                from the SQL database.\nAbording the program.\n{e}")
                         sys.exit(1)
             df_query1 = pd.concat(dfs)
             # If the DataFrame is empty, terminate the program.
@@ -377,22 +418,30 @@ class Extract_Data:
                 print('DataFrame is empty, aborting the program.\nAbording the program.')
                 sys.exit(1)
             else:
-                # sys.setrecursionlimit(25000) # If maximum recursion error occurs, increase recursion limit.
+                # If maximum recursion error occurs, increase recursion limit. sys.setrecursionlimit(25000)
                 pass
-            for filing_number, company_name, filing_type, filing_date, short_name, report_url in df_query1.itertuples(index = False):
+            for filing_number,\
+                company_name,\
+                filing_type,\
+                filing_date,\
+                short_name,\
+                report_url in df_query1.itertuples(index = False):
                 print(f'Processing {short_name} table at {report_url}.')
 
                 if report_url.endswith('.htm'):
                     try:
                         self.htm_table_extractor(report_url)
                     except ValueError as e:
-                        print(f"Could not retreive the table for filing number {filing_number} at {report_url}\n{e}")
+                        print(f"Could not retreive the table for filing number \
+                                {filing_number} at {report_url}\n{e}")
                         break
                     else:
                         try:
                             # We want to name the table with a unique table name for easy reference.
-                            table_name = filing_type + filing_date + '_' + short_name.replace(' ','_') + '_' + str(filing_number)
-                            table_name = re.sub(r"[^a-zA-Z0-9]+", '_', table_name) # Remove all special characters except for '_'
+                            table_name = filing_type + filing_date + '_' + \
+                                         short_name.replace(' ','_') + '_' + str(filing_number)
+                            # Remove all special characters except for '_'
+                            table_name = re.sub(r"[^a-zA-Z0-9]+", '_', table_name)
                             print(f'Inserting data from the DataFrame into SQL table {table_name}')
                             # Write records that are stored in the DataFrame into a SQL server database.
                             self.df_xml.to_sql(con = conn,
@@ -403,7 +452,8 @@ class Extract_Data:
                         except ValueError as e:
                             print(f"Could not migrate the {short_name} table to the SQL database.\n{e}")
                 elif report_url.endswith('.xml'):
-                    print('.xml extension link detected. Unable to to process the table.\n.xml extension link support is expected to be developed in the future.')
+                    print('.xml extension link detected. Unable to to process the table.\
+                           \n.xml extension link support is expected to be developed in the future.')
                 else:
                     print(f'Table for filing number {filing_number} could not be detected.')
 
@@ -452,7 +502,8 @@ class Extract_Data:
                                 for item in df_table.iloc[:,0]:
                                     match = re.search('\D{3}. \d{2}, \d{4}', item)
                                     if match is not None:
-                                        date= parser.parse(match.group()).strftime("%Y-%m-%d") # .strftime removes the time stamp.
+                                        # .strftime removes the time stamp.
+                                        date= parser.parse(match.group()).strftime("%Y-%m-%d")
                                         date_list.append(date)
                                     else:
                                         date_list.append(item)
