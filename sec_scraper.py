@@ -68,7 +68,7 @@ class DB_Connection:
             print(f'Unable to close database connection.\n{e}')
 
 
-class Get_Filing_Links:
+class Filing_Links:
 
     def __init__(self, company_CIKs, filing_types, start_date, end_date):
             self.company_CIKs = company_CIKs
@@ -548,7 +548,7 @@ class Extract_Data:
 
 connection1 = DB_Connection(db_name, folder_path, db_path)
 connection1.create_folder()
-filings1 = Get_Filing_Links(company_CIKs, filing_types, start_date, end_date)
+filings1 = Filing_Links(company_CIKs, filing_types, start_date, end_date)
 filings1.Get_Filing_Links()
 filings1.get_table_links()
 data1 = Extract_Data()
