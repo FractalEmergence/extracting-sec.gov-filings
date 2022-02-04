@@ -71,22 +71,26 @@ pragma table_info('table_name');
 -----------------------------------
 
 CREATE VIEW reference_table AS
-SELECT b.short_name AS 'Table Name',  a.company_name AS  'Company Name' ,
-a.filing_number AS  'Filing Number',  a.filing_date AS 'Filing Date',
-a.cik  AS  'Company CIK' , a.filing_type AS  'Filing Type',
-a.table_name AS 'Full Table Name',  b.report_url AS 'Link to Table'
+SELECT b.short_name AS 'Table_Name',  
+       a.company_name AS  'Company_Name' ,
+       a.filing_number AS  'Filing_Number', 
+       a.filing_date AS 'Filing_Date',
+       a.cik  AS  'Company_CIK' , 
+       a.filing_type AS  'Filing_Type',
+       a.table_name AS 'Full_Table_Name',  
+       b.report_url AS 'Link_to_Table'
 FROM (
-      SELECT a.filing_number, a.filing_date, a.company_name, a.cik, a.filing_type, b.table_name
-      FROM filing_list AS a
-      INNER JOIN (SELECT name AS table_name
-                  FROM sqlite_master
-                  WHERE type='table') AS b
-      ON b.table_name LIKE '%' || a.filing_number || '%') AS a
+    SELECT a.filing_number, a.filing_date, a.company_name, a.cik, a.filing_type, b.table_name
+    FROM filing_list AS a
+    INNER JOIN (SELECT name AS table_name
+                FROM sqlite_master
+                WHERE type='table') AS b
+    ON b.table_name LIKE '%' || a.filing_number || '%') AS a
 LEFT OUTER JOIN individual_report_links AS b
 ON (a.table_name LIKE '%' || REPLACE(b.short_name, ' ' , '_') || '_'||  b.filing_number|| '%')
 AND a.filing_number = b.filing_number
 GROUP BY a.table_name
-ORDER BY 6
+ORDER BY a.filing_date DESC
 
 --------------------------------------------------------------------------------------------------------------------------------
 -- This is an example of combining Microsoft's income statements for the past 9 years and converting data types (if necessary)--
