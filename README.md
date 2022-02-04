@@ -38,7 +38,7 @@ Companies included in the database: Microsoft, Tesla and Amazon
 Filing types: 10-K and 10-Q
 Time range: 2015-01-26 to 2021-10-29
 
-Download the normalized edgar_transposed.db database at https://drive.google.com/file/d/1eikVcM-LvDn7_lCgQtBaXVSttQ5flyUT/view?usp=sharing.
+Download the normalized edgar_transposed.db database at https://drive.google.com/file/d/1Au1IVlzDVFVJNZVg_rjRJqWT-qplS1QQ/view?usp=sharing.
 
 Download the non-processed edgar.db database at https://drive.google.com/file/d/15qNf6zR6XBr5-nXlqPTVjwGuF4tw7MLS/view?usp=sharing.
     
