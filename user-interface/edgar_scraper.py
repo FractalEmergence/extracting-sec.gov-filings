@@ -328,15 +328,6 @@ class Filing_Links:
                         with closing(conn.cursor()) as cursor:
                             cursor.execute(
                             """
-                            CREATE TABLE IF NOT EXISTS individual_report_links (
-                            filing_number integer,
-                            short_name text,
-                            report_url text,
-                            FOREIGN KEY(filing_number) REFERENCES filing_list(filing_number)
-                            )
-                            ;""")
-                            cursor.execute(
-                            """
                             INSERT OR IGNORE INTO individual_report_links (
                             filing_number,
                             short_name,
