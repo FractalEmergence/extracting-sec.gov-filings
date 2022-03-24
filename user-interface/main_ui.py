@@ -55,7 +55,6 @@ class MainWindow(QtWidgets.QMainWindow):
         # Connect button click inputs from the user.
         self.generate_DB_button = self.findChild(QtWidgets.QPushButton, 'pushButton_generate_DB')
         self.generate_DB_button.clicked.connect(self.append_textbox_input)
-
         self.generate_DB_button.clicked.connect(connection1.create_folder)
         self.generate_DB_button.clicked.connect(filings1.Get_Filing_Links)
         if not UserParameters.error_messages:
@@ -69,6 +68,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
         self.normalize_DB_button = self.findChild(QtWidgets.QPushButton, 'pushButton_normalize_DB')
+        self.normalize_DB_button.clicked.connect(self.append_textbox_input)
         if not UserParameters.error_messages:
             self.normalize_DB_button.clicked.connect(data1.transpose)
         else:
