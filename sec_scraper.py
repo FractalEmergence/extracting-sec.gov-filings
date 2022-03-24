@@ -28,19 +28,14 @@ end_date = '2022-01-01'
 
 # Create a class to handle connection(s) to SQLite database(s).
 class DB_Connection:
-
-    # Initialize the object's attributes.
-    def __init__(self, db_name, folder_path, db_path):
-        self.db_name = db_name
-        self.folder_path = folder_path
-
     # Create a directory for the DB file if the directory does not exist.
     def create_folder(self):
-        if not os.path.exists(self.folder_path):
-            os.makedirs(self.folder_path)
-            print(f'Successfully created a new folder path {self.folder_path}.')
+        if not os.path.exists(UserParameters.folder_path):
+            os.makedirs(UserParameters.folder_path)
+            print(f'Successfully created a new folder path {UserParameters.folder_path}.')
         else:
-            print(f'Folder path {self.folder_path} already exists.')
+            print(f'Folder path {UserParameters.folder_path} already exists.')
+
 
     # Open connection to the database, if connection fails abort the program.
     # If the DB file does not already exist, it will be automatically created.
@@ -51,11 +46,10 @@ class DB_Connection:
             print(f'Successfully connected to the {db_path} database.')
             return cls.conn
         except sqlite3.Error as e:
-            print(f'Error occurred, unable to connect to the {db_path} database.\
-                    \n{e}\nAbording program.')
-            # sys.exit(0) means the program is exiting without any errors
-            # sys.exit(1) means there was an error.
-            sys.exit(1)
+            print(f'Error occurred, unable to connect to the {db_path} database.')
+            print(e)
+            UserParameters.error_messages.append(e)
+            return None
     # Close connection to the database.
     @classmethod
     def close_conn(cls):
@@ -70,18 +64,14 @@ class DB_Connection:
 
 class Filing_Links:
 
-    def __init__(self, company_CIKs, filing_types, start_date, end_date):
-            self.company_CIKs = company_CIKs
+    def __init__(self):
             # Capitalize the letters of form type, since by default SQLite is case sensitive.
-            self.filing_types = [item.upper() for item in filing_types]
-            self.start_date = start_date
-            self.end_date = end_date
-
+            UserParameters.filing_types = [item.upper() for item in UserParameters.filing_types]
     # Get available filings types for a specific company and their respective links.
     def Get_Filing_Links(self):
         try:
-            for Company_CIK_Number in self.company_CIKs:
-                for Filing_Type in self.filing_types:
+            for Company_CIK_Number in UserParameters.company_CIKs:
+                for Filing_Type in UserParameters.filing_types:
                     # define our parameters dictionary
                     filing_parameters = {'action':'getcompany',
                                   'CIK':Company_CIK_Number,
@@ -179,15 +169,17 @@ class Filing_Links:
         except Exception as e:
             print(f"Could not retrieve the table containing the necessary information.\
                     \nAbording the program.\nIf index list is out of range, make sure \
-                    that you entered the correct CIK number(s).\n{e}")
-            sys.exit(1)
+                    \nthat you entered the correct CIK number(s).")
+            print(e)
+            UserParameters.error_messages.append(e)
+            return None
 
     # Migrate the DataFrame containing, filing and document links information to a local SQLite database.
     def info_to_sql(self, Company_Name, Company_CIK_Number, Account_Number,
                     Filing_Type, Filing_Number, Filing_Date, Document_Link,
                     Interactive_Data_Link, Filing_Number_Link, Summary_Link_Xml):
 
-        with DB_Connection.open_conn(db_path) as conn:
+        with DB_Connection.open_conn(UserParameters.db_path) as conn:
             try:
                 with closing(conn.cursor()) as cursor:
                     cursor.execute(
@@ -207,8 +199,10 @@ class Filing_Links:
                     ;""")
             except ValueError as e:
                 print(f"Error occurred while attempting to create filing_list table.\
-                        \nAbording the program.\n{e}")
-                sys.exit(1)
+                        \nAbording the program.")
+                print(e)
+                UserParameters.error_messages.append(e)
+                return None
             else:
                 print("Successfully created the table.")
                 print(f"Migrating information for filing number {Filing_Number} to the SQL table.......")
@@ -249,10 +243,10 @@ class Filing_Links:
     # Extract individual table links to financial statements, supplementary data tables, etc
     def get_table_links(self):
         dfs = []
-        with DB_Connection.open_conn(db_path) as conn:
+        with DB_Connection.open_conn(UserParameters.db_path) as conn:
             try:
-                for Company_CIK_Number in self.company_CIKs:
-                    for Filing_Type in self.filing_types:
+                for Company_CIK_Number in UserParameters.company_CIKs:
+                    for Filing_Type in UserParameters.filing_types:
                         df = pd.read_sql_query(
                              """
                              SELECT filing_number, summary_link_xml
@@ -263,19 +257,23 @@ class Filing_Links:
                              AND filing_date BETWEEN ? AND ?
                              """, con = conn , params=(Filing_Type,
                                                        Company_CIK_Number,
-                                                       self.start_date,
-                                                       self.end_date))
+                                                       UserParameters.start_date,
+                                                       UserParameters.end_date))
                         dfs.append(df)
                 df_query2 = pd.concat(dfs)
 
             except ValueError as e:
-                print(f"Error occurred while attempting to retrieve data from the filing_list table.\n{e}")
-                sys.exit(1)
+                print(f"Error occurred while attempting to retrieve data from the filing_list table.")
+                print(e)
+                UserParameters.error_messages.append(e)
+                return None
 
             # If the DataFrame is empty, terminate the program.
             if len(df_query2) == 0:
-                print('DataFrame is empty, aborting the program.\nAbording the program.')
-                sys.exit(1)
+                error_msg ='DataFrame is empty. (Error in the get_table_links method) '
+                print(error_msg)
+                UserParameters.error_messages.append(error_msg)
+                return None
             try:
                 with closing(conn.cursor()) as cursor:
                     cursor.execute(
@@ -284,13 +282,16 @@ class Filing_Links:
                     filing_number integer,
                     short_name text,
                     report_url text,
-                    FOREIGN KEY(filing_number) REFERENCES filing_list(filing_number)
+                    FOREIGN KEY(filing_number) REFERENCES filing_list(filing_number),
+                    UNIQUE(report_url)
                     )
                     ;""")
             except ValueError as e:
                 print(f"Error occurred while attempting to create individual_report_links table.\
-                        \nAbording the program.\n{e}")
-                sys.exit(1)
+                        \nAbording the program.")
+                print(e)
+                UserParameters.error_messages.append(e)
+                return None
 
             # Extract the tables name and its respective URL
             # Currently, I do not have a function/method to extract data from a .XML file extension.
@@ -335,7 +336,7 @@ class Filing_Links:
                             ;""")
                             cursor.execute(
                             """
-                            INSERT INTO individual_report_links (
+                            INSERT OR IGNORE INTO individual_report_links (
                             filing_number,
                             short_name,
                             report_url
@@ -346,8 +347,10 @@ class Filing_Links:
                              ))
                     except ValueError as e:
                         print(f"Error occurred while attempting to insert values into \
-                                the individual_report_links table.\nAbording the program.\n{e}")
-                        sys.exit(1)
+                                the individual_report_links table.\nAbording the program.")
+                        print(e)
+                        UserParameters.error_messages.append(e)
+                        return None
 
         DB_Connection.close_conn()
 
@@ -383,9 +386,9 @@ class Extract_Data:
     def get_tables(self):
 
         dfs =[]
-        with DB_Connection.open_conn(db_path) as conn:
-            for company_CIK in filings1.company_CIKs:
-                for filing_type in filings1.filing_types:
+        with DB_Connection.open_conn(UserParameters.db_path) as conn:
+            for company_CIK in UserParameters.company_CIKs:
+                for filing_type in UserParameters.filing_types:
                     try:
                         df = pd.read_sql_query(
                             """
@@ -405,21 +408,31 @@ class Extract_Data:
                             ORDER by filing_date DESC
                             LIMIT ?
                             """, con = conn , params=(company_CIK, filing_type,
-                                                      filings1.start_date,
-                                                      filings1.end_date , 10))
+                                                      UserParameters.start_date,
+                                                      UserParameters.end_date , 10))
                         dfs.append(df)
                     except ValueError as e:
                         print(f"Error occurred while attempting to retreive data \
-                                from the SQL database.\nAbording the program.\n{e}")
-                        sys.exit(1)
-            df_query1 = pd.concat(dfs)
-            # If the DataFrame is empty, terminate the program.
-            if len(df_query1) == 0:
-                print('DataFrame is empty, aborting the program.\nAbording the program.')
-                sys.exit(1)
+                                from the SQL database.\nAbording the program.")
+                        print(e)
+                        UserParameters.error_messages.append(e)
+                        return None
+            if dfs:
+                df_query1 = pd.concat(dfs)
             else:
-                # If maximum recursion error occurs, increase recursion limit. sys.setrecursionlimit(25000)
-                pass
+                empty_df_msg = 'DataFrame is Empty. (Error in the get_tables method)'
+                print(empty_df_msg)
+                UserParameters.error_messages.append(empty_df_msg)
+                return None
+
+            # If the DataFrame is empty, terminate the program.
+            # if len(df_query1) == 0:
+            #     main.error_box('DataFrame is Empty')
+            #     return None
+            # else:
+            #     # If maximum recursion error occurs, increase recursion limit. sys.setrecursionlimit(25000)
+            #     pass
+
             for filing_number,\
                 company_name,\
                 filing_type,\
@@ -443,12 +456,22 @@ class Extract_Data:
                             # Remove all special characters except for '_'
                             table_name = re.sub(r"[^a-zA-Z0-9]+", '_', table_name)
                             print(f'Inserting data from the DataFrame into SQL table {table_name}')
-                            # Write records that are stored in the DataFrame into a SQL server database.
-                            self.df_xml.to_sql(con = conn,
-                                      name=table_name,
-                                      schema='SCHEMA',
-                                      index=False,
-                                      if_exists='fail') #
+                            # Check to see if table already exists in the database to avoid duplicate records.
+                            with closing(conn.cursor()) as cursor:
+                                cursor.execute(f""" SELECT count(name)
+                                              FROM sqlite_master
+                                              WHERE type='table' AND name= '{table_name}' """) # SQL injection vulnerability.
+                                # If count is 1, then table exists
+                                if cursor.fetchone()[0]==1:
+                                    print(f'Table {table_name} already exists.')
+                                else:
+                                    # Write records that are stored in the DataFrame into a SQL server database.
+                                    self.df_xml.to_sql(con = conn,
+                                              name=table_name,
+                                              schema='SCHEMA',
+                                              index=False,
+                                              if_exists='fail')
+
                         except ValueError as e:
                             print(f"Could not migrate the {short_name} table to the SQL database.\n{e}")
                 elif report_url.endswith('.xml'):
@@ -462,9 +485,8 @@ class Extract_Data:
 
     # Normalize the data.
     def transpose(self):
-
-        db2_path = db_path.replace('.db','_transposed.db')
-        with DB_Connection.open_conn(db_path) as conn:
+        db2_path = UserParameters.db_path.replace('.db','_transposed.db')
+        with DB_Connection.open_conn(UserParameters.db_path) as conn:
             try:
                 df_table_list = pd.read_sql_query(
                 """
@@ -530,19 +552,28 @@ class Extract_Data:
                         print(f"Could not transpose the table.\n{e}")
                     else:
                         with DB_Connection.open_conn(db2_path) as conn2:
-                            try:
-                                #row.table_name = ''.join(e for e in row.table_name if e.isalnum())
-                                print(f'Inserting data from the DataFrame into SQL table {row.table_name}')
-                                # Write records that are stored in the DataFrame into a SQL server database.
-                                df_table.to_sql(con = conn2,
-                                                name = row.table_name,
-                                                schema ='SCHEMA',
-                                                if_exists = 'append',
-                                                index = False
-                                                )
+                            # Check to see if table already exists in the database.
+                            with closing(conn2.cursor()) as cursor:
+                                cursor.execute(f""" SELECT count(name)
+                                              FROM sqlite_master
+                                              WHERE type='table' AND name= '{row.table_name}' """) # SQL injection vulnerability.
+                                # If count is 1, then table exists
+                                if cursor.fetchone()[0]==1:
+                                    print(f'Table {row.table_name} already exists.')
+                                else:
+                                    try:
+                                        print(f'Connected to the {db2_path} database.')
+                                        print(f'Inserting data from the DataFrame into SQL table {row.table_name}')
+                                        # Write records that are stored in the DataFrame into a SQL server database.
+                                        df_table.to_sql(con = conn2,
+                                                        name = row.table_name,
+                                                        schema ='SCHEMA',
+                                                        if_exists = 'append',
+                                                        index = False
+                                                        )
 
-                            except Exception as e:
-                                print(f"Could not migrate the {row.table_name} table to the SQL database.\n{e}")
+                                    except Exception as e:
+                                        print(f"Could not migrate the {row.table_name} table to the normalized SQL database.\n{e}")
 
         DB_Connection.close_conn()
 
