@@ -283,7 +283,8 @@ class Filing_Links:
                     filing_number integer,
                     short_name text,
                     report_url text,
-                    FOREIGN KEY(filing_number) REFERENCES filing_list(filing_number)
+                    FOREIGN KEY(filing_number) REFERENCES filing_list(filing_number),
+                    UNIQUE(report_url)
                     )
                     ;""")
             except ValueError as e:
@@ -336,7 +337,7 @@ class Filing_Links:
                             ;""")
                             cursor.execute(
                             """
-                            INSERT INTO individual_report_links (
+                            INSERT OR IGNORE INTO individual_report_links (
                             filing_number,
                             short_name,
                             report_url
@@ -456,12 +457,22 @@ class Extract_Data:
                             # Remove all special characters except for '_'
                             table_name = re.sub(r"[^a-zA-Z0-9]+", '_', table_name)
                             print(f'Inserting data from the DataFrame into SQL table {table_name}')
-                            # Write records that are stored in the DataFrame into a SQL server database.
-                            self.df_xml.to_sql(con = conn,
-                                      name=table_name,
-                                      schema='SCHEMA',
-                                      index=False,
-                                      if_exists='fail') #
+                            # Check to see if table already exists in the database to avoid duplicate records.
+                            with closing(conn.cursor()) as cursor:
+                                cursor.execute(f""" SELECT count(name)
+                                              FROM sqlite_master
+                                              WHERE type='table' AND name= '{table_name}' """) # SQL injection vulnerability.
+                                # If count is 1, then table exists
+                                if cursor.fetchone()[0]==1:
+                                    print(f'Table {table_name} already exists.')
+                                else:
+                                    # Write records that are stored in the DataFrame into a SQL server database.
+                                    self.df_xml.to_sql(con = conn,
+                                              name=table_name,
+                                              schema='SCHEMA',
+                                              index=False,
+                                              if_exists='fail')
+
                         except ValueError as e:
                             print(f"Could not migrate the {short_name} table to the SQL database.\n{e}")
                 elif report_url.endswith('.xml'):
@@ -542,20 +553,28 @@ class Extract_Data:
                         print(f"Could not transpose the table.\n{e}")
                     else:
                         with DB_Connection.open_conn(db2_path) as conn2:
-                            try:
-                                #row.table_name = ''.join(e for e in row.table_name if e.isalnum())
-                                print(f'Connected to the {db2_path} database.')
-                                print(f'Inserting data from the DataFrame into SQL table {row.table_name}')
-                                # Write records that are stored in the DataFrame into a SQL server database.
-                                df_table.to_sql(con = conn2,
-                                                name = row.table_name,
-                                                schema ='SCHEMA',
-                                                if_exists = 'append',
-                                                index = False
-                                                )
+                            # Check to see if table already exists in the database.
+                            with closing(conn2.cursor()) as cursor:
+                                cursor.execute(f""" SELECT count(name)
+                                              FROM sqlite_master
+                                              WHERE type='table' AND name= '{row.table_name}' """) # SQL injection vulnerability.
+                                # If count is 1, then table exists
+                                if cursor.fetchone()[0]==1:
+                                    print(f'Table {row.table_name} already exists.')
+                                else:
+                                    try:
+                                        print(f'Connected to the {db2_path} database.')
+                                        print(f'Inserting data from the DataFrame into SQL table {row.table_name}')
+                                        # Write records that are stored in the DataFrame into a SQL server database.
+                                        df_table.to_sql(con = conn2,
+                                                        name = row.table_name,
+                                                        schema ='SCHEMA',
+                                                        if_exists = 'append',
+                                                        index = False
+                                                        )
 
-                            except Exception as e:
-                                print(f"Could not migrate the {row.table_name} table to the normalized SQL database.\n{e}")
+                                    except Exception as e:
+                                        print(f"Could not migrate the {row.table_name} table to the normalized SQL database.\n{e}")
 
         DB_Connection.close_conn()
 
