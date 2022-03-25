@@ -538,7 +538,7 @@ class Extract_Data:
                                               FROM sqlite_master
                                               WHERE type='table' AND name= '{row.table_name}' """) # SQL injection vulnerability.
                                 # If count is 1, then table exists
-                                if cursor.fetchone()[0]==1:
+                                if cursor.fetchone()[0]==1 and row.table_name not in ['filing_list', 'individual_report_links']:
                                     print(f'Table {row.table_name} already exists.')
                                 else:
                                     try:
@@ -548,7 +548,7 @@ class Extract_Data:
                                         df_table.to_sql(con = conn2,
                                                         name = row.table_name,
                                                         schema ='SCHEMA',
-                                                        if_exists = 'append',
+                                                        if_exists = 'replace',
                                                         index = False
                                                         )
 
