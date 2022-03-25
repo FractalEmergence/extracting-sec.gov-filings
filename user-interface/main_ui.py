@@ -22,6 +22,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cik_box4_tuple = ()
         self.cik_box5_tuple = ()
 
+        self.label_12.setOpenExternalLinks(True)
+
         # Connect the user input for database name
         self.lineEdit_box1_2.textChanged.connect(self.textbox_db_name)
         # Connect the user input for folder directory
