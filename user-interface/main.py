@@ -2,8 +2,7 @@ from PyQt5 import QtWidgets, uic, QtGui, QtCore
 from edgar_scraper import *
 import sys
 from PyQt5.QtWidgets import QMessageBox
-import nyc_bg # Background image
-
+import nyc_bg # Import the background image, to convert the image use the following command: pyrcc5 nyc.qrc -o nyc_bg.py
 
 class MainWindow(QtWidgets.QMainWindow):
 
@@ -79,35 +78,35 @@ class MainWindow(QtWidgets.QMainWindow):
     # Format the date inputs from the user.
     def start_date_change(self, start_date):
         formatted_start_date = '{0}-{1}-{2}'.format(start_date.year(), start_date.day(), start_date.month())
-        print(f"Starting date has been changed to : {formatted_start_date}") # This line is for testing purposes only
+        print(f"Starting date has been changed to : {formatted_start_date}") 
         UserParameters.start_date = formatted_start_date
     def end_date_change(self, end_date):
         formatted_end_date = '{0}-{1}-{2}'.format(end_date.year(), end_date.day(), end_date.month())
-        print(f"Ending date has been changed to : {formatted_end_date}") # This line is for testing purposes only
+        print(f"Ending date has been changed to : {formatted_end_date}") 
         UserParameters.end_date = formatted_end_date
     # Add or remove selected forms to/from filing_types list.
     def state_changed_10k(self, int):
         if self.checkBox_10k.isChecked():
-            print('10k checked')  # This line is for testing purposes only
+            print('10k checked')  
             self.check_box_list.append('10-K')
         else:
-            print('10k unchecked')  # This line is for testing purposes only
+            print('10k unchecked') 
             self.check_box_list.remove('10-K') # Remove 10-k from the lsit
         print(f'filing_types list : {UserParameters.filing_types}')
     def state_changed_10q(self, int):
         if self.checkBox_10q.isChecked():
-            print('10q checked')  # This line is for testing purposes only
+            print('10q checked')  
             self.check_box_list.append('10-Q')
         else:
-            print('10q unchecked')  # This line is for testing purposes only
+            print('10q unchecked') 
             self.check_box_list.remove('10-Q') # Remove 10-q from the lsit
         print(f'filing_types list : {UserParameters.filing_types}')
     def state_changed_8k(self, int):
         if self.checkBox_8k.isChecked():
-            print('8k checked')  # This line is for testing purposes only
+            print('8k checked') 
             self.check_box_list.append('8-K')
         else:
-            print('8k unchecked')  # This line is for testing purposes only
+            print('8k unchecked')  
             self.check_box_list.remove('8-K') # Remove 10-k from the lsit
         print(f'filing_types list : {UserParameters.filing_types}')
 
