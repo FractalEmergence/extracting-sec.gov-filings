@@ -62,7 +62,7 @@ class DB_Connection:
     def close_conn(cls):
         try:
             cls.conn.commit()
-            print('Commited transactions.')
+            print('Committed transactions.')
             cls.conn.close()
             print('Closing all database connections.')
         except Exception as e:
