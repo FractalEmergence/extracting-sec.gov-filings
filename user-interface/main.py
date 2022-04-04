@@ -35,11 +35,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.lineEdit_box1_7.textChanged.connect(self.textbox4_cik)
         self.lineEdit_box1_8.textChanged.connect(self.textbox5_cik)
 
-        # Connect form slection check boxes to user input
+        # Connect form selection check boxes to user input
         self.checkBox_10k.stateChanged.connect(self.state_changed_10k)
         self.checkBox_10q.stateChanged.connect(self.state_changed_10q)
         self.checkBox_8k.stateChanged.connect(self.state_changed_8k)
-        # Connect form slection line edit boxes to user input
+        # Connect form selection line edit boxes to user input
         self.lineEdit_box1.textChanged.connect(self.textbox1)
         self.lineEdit_box2.textChanged.connect(self.textbox2)
         self.lineEdit_box3.textChanged.connect(self.textbox3)
